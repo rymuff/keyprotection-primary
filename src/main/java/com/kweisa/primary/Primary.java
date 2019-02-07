@@ -104,15 +104,14 @@ public class Primary {
         final byte[] encrypted = readBytesFromFile(new File("private.key"));
 
         // DERIVE key (from password and salt)
-        SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA512");
-        KeySpec passwordBasedEncryptionKeySpec = new PBEKeySpec(password.toCharArray(), salt, 10000, 256);
-        SecretKey secretKeyFromPBKDF2 = secretKeyFactory.generateSecret(passwordBasedEncryptionKeySpec);
-        SecretKey key = new SecretKeySpec(secretKeyFromPBKDF2.getEncoded(), "AES");
+        SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
+        KeySpec keySpec = new PBEKeySpec(password.toCharArray(), salt, 10000, 256);
+        SecretKey secretKey = new SecretKeySpec(secretKeyFactory.generateSecret(keySpec).getEncoded(), "AES");
 
         // DECRYPTION
         Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
         GCMParameterSpec spec = new GCMParameterSpec(16 * 8, nonce);
-        cipher.init(Cipher.DECRYPT_MODE, key, spec);
+        cipher.init(Cipher.DECRYPT_MODE, secretKey, spec);
 
         byte[] decrypted = cipher.doFinal(encrypted);
 
@@ -191,8 +190,11 @@ public class Primary {
         FileInputStream fileInputStream = new FileInputStream(file);
         byte[] bytes = new byte[fileInputStream.available()];
         if (fileInputStream.available() != fileInputStream.read(bytes)) {
+            fileInputStream.close();
             throw new IOException();
         }
+        fileInputStream.close();
+
         return bytes;
     }
 }
