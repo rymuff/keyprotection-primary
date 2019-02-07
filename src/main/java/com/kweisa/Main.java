@@ -68,7 +68,7 @@ public class Main {
             primary.connect(serverUrl);
             primary.authenticate();
             primary.close();
-            test.add(System.currentTimeMillis()-startTime);
+            test.add(System.currentTimeMillis() - startTime);
         }
 
         for (Long aLong : test) {
