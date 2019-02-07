@@ -104,7 +104,7 @@ public class Primary {
         final byte[] encrypted = readBytesFromFile(new File("private.key"));
 
         // DERIVE key (from password and salt)
-        SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
+        SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA512");
         KeySpec passwordBasedEncryptionKeySpec = new PBEKeySpec(password.toCharArray(), salt, 10000, 256);
         SecretKey secretKeyFromPBKDF2 = secretKeyFactory.generateSecret(passwordBasedEncryptionKeySpec);
         SecretKey key = new SecretKeySpec(secretKeyFromPBKDF2.getEncoded(), "AES");
