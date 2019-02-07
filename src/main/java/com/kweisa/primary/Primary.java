@@ -1,9 +1,6 @@
 package com.kweisa.primary;
 
 
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.scalars.ScalarsConverterFactory;
 
@@ -72,7 +69,7 @@ public class Primary {
         ArrayList<String> serviceUrls = new ArrayList<>();
 
         synchronized (serviceSearchCompletedEvent) {
-            LocalDevice.getLocalDevice().getDiscoveryAgent().searchServices(null, new UUID[]{serviceUUID}, remoteDevice, new DiscoveryListener() {
+            LocalDevice.getLocalDevice().getDiscoveryAgent().searchServices(new int[]{0x0100}, new UUID[]{serviceUUID}, remoteDevice, new DiscoveryListener() {
                 @Override
                 public void deviceDiscovered(RemoteDevice btDevice, DeviceClass cod) {
 
