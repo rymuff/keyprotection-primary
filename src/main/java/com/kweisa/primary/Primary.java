@@ -141,6 +141,13 @@ public class Primary {
         // Sign nonce, and send signature
         byte[] signature = sign(nonce);
         send(signature);
+
+        // Receive result
+        if (receiveInt() == 0) {
+            System.out.println("[*] Verified");
+        } else {
+            System.out.println("[*] Verified fail");
+        }
     }
 
     private byte[] sign(byte[] message) throws InvalidKeyException, SignatureException, NoSuchAlgorithmException {
@@ -165,6 +172,13 @@ public class Primary {
         System.out.printf("[<] %s\n", message);
 
         return Base64.getDecoder().decode(message);
+    }
+
+    private int receiveInt() throws IOException {
+        int data = bufferedReader.read();
+        System.out.printf("[<] INT:%d\n", data);
+
+        return data;
     }
 
     public void close() throws IOException {
