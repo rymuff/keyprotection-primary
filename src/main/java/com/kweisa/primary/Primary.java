@@ -1,6 +1,8 @@
 package com.kweisa.primary;
 
 
+import retrofit2.Retrofit;
+
 import javax.bluetooth.*;
 import javax.crypto.*;
 import javax.crypto.spec.GCMParameterSpec;
@@ -98,22 +100,22 @@ public class Primary {
         return serviceUrls;
     }
 
-    public void load(String password) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, InvalidAlgorithmParameterException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException, CertificateException {
-        final byte[] salt = readBytesFromFile(new File("salt"));
-        final byte[] nonce = readBytesFromFile(new File("nonce"));
-        final byte[] encrypted = readBytesFromFile(new File("private.key"));
-
-        // DERIVE key (from password and salt)
+    private SecretKey deriveKey(String password, byte[] salt) throws NoSuchAlgorithmException, InvalidKeySpecException {
         SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
         KeySpec keySpec = new PBEKeySpec(password.toCharArray(), salt, 10000, 256);
-        SecretKey secretKey = new SecretKeySpec(secretKeyFactory.generateSecret(keySpec).getEncoded(), "AES");
+        return new SecretKeySpec(secretKeyFactory.generateSecret(keySpec).getEncoded(), "AES");
+    }
 
-        // DECRYPTION
+    private byte[] decrypt(SecretKey secretKey, byte[] nonce, byte[] input) throws BadPaddingException, IllegalBlockSizeException, NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException {
         Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-        GCMParameterSpec spec = new GCMParameterSpec(16 * 8, nonce);
-        cipher.init(Cipher.DECRYPT_MODE, secretKey, spec);
+        GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(16 * 8, nonce);
+        cipher.init(Cipher.DECRYPT_MODE, secretKey, gcmParameterSpec);
+        return cipher.doFinal(input);
+    }
 
-        byte[] decrypted = cipher.doFinal(encrypted);
+    private void load(String password, byte[] salt, byte[] nonce, byte[] encrypted) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, InvalidAlgorithmParameterException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException, CertificateException {
+        SecretKey secretKey = deriveKey(password, salt);
+        byte[] decrypted = decrypt(secretKey, nonce, encrypted);
 
         // Convert byte to PrivateKey
         KeyFactory keyFactory = KeyFactory.getInstance("RSA");
@@ -122,6 +124,40 @@ public class Primary {
         // Load Certificate
         CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
         certificate = certificateFactory.generateCertificate(new FileInputStream(new File("primary.cert")));
+    }
+
+    public void loadFromLocal(String password) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, InvalidAlgorithmParameterException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException, CertificateException {
+        byte[] salt = readBytesFromFile(new File("local.salt"));
+        byte[] nonce = readBytesFromFile(new File("local.nonce"));
+        byte[] encrypted = readBytesFromFile(new File("local.key"));
+
+        load(password, salt, nonce, encrypted);
+    }
+
+    public void loadFromServer(String id, String password) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, InvalidAlgorithmParameterException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException, CertificateException {
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl("https://rymuff.com")
+                .build();
+        SaltService saltService = retrofit.create(SaltService.class);
+        String encodedSalt = saltService.readSalt(id, password).execute().body();
+
+        if (encodedSalt == null) {
+            throw new NullPointerException();
+        }
+
+        byte[] salt = Base64.getDecoder().decode(encodedSalt);
+        byte[] nonce = readBytesFromFile(new File("server.nonce"));
+        byte[] encrypted = readBytesFromFile(new File("server.key"));
+
+        load(password, salt, nonce, encrypted);
+    }
+
+    public void loadFromSecondary(String password) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, InvalidAlgorithmParameterException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException, CertificateException {
+        byte[] salt = readBytesFromFile(new File("secondary.salt"));
+        byte[] nonce = readBytesFromFile(new File("secondary.nonce"));
+        byte[] encrypted = readBytesFromFile(new File("secondary.key"));
+
+        load(password, salt, nonce, encrypted);
     }
 
     public void connect(String serverUrl) throws IOException {

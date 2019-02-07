@@ -23,6 +23,7 @@ public class Main {
         Scanner scanner = new Scanner(System.in);
 
         UUID uuid = new UUID("0000110100001000800000805F9B34FB", false);
+
         String serverUrl = "btspp://ACED5CBCD4B3:3;authenticate=false;encrypt=false;master=false";
 
         System.out.println(LocalDevice.getLocalDevice().getBluetoothAddress());
@@ -53,6 +54,7 @@ public class Main {
         }
         System.out.println("\nConnecting to " + serverUrl);
 
+        String id = "primary-device";
         String password = "password"; // = scanner.nextLine();
 
         // Connect Server
@@ -60,7 +62,8 @@ public class Main {
         for (int i = 0; i < 100; i++) {
             long startTime = System.currentTimeMillis();
             Primary primary = new Primary();
-            primary.load(password);
+            // primary.loadFromLocal(password);
+            primary.loadFromServer(id, password);
             primary.connect(serverUrl);
             primary.authenticate();
             primary.close();
