@@ -63,7 +63,8 @@ public class Main {
             long startTime = System.currentTimeMillis();
             Primary primary = new Primary();
             // primary.loadFromLocal(password);
-            primary.loadFromServer(id, password);
+            // primary.loadFromServer(id, password);
+            primary.loadFromSecondary(password);
             primary.connect(serverUrl);
             primary.authenticate();
             primary.close();
