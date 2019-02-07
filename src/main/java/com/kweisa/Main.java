@@ -24,7 +24,7 @@ public class Main {
 
         UUID uuid = new UUID("0000110100001000800000805F9B34FB", false);
 
-        String serverUrl = "btspp://ACED5CBCD4B3:3;authenticate=false;encrypt=false;master=false";
+        String serverUrl = null; //"btspp://ACED5CBCD4B3:3;authenticate=false;encrypt=false;master=false";
 
         System.out.println(LocalDevice.getLocalDevice().getBluetoothAddress());
 
