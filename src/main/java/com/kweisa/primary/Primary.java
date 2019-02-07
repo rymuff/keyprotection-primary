@@ -1,7 +1,11 @@
 package com.kweisa.primary;
 
 
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 import retrofit2.Retrofit;
+import retrofit2.converter.scalars.ScalarsConverterFactory;
 
 import javax.bluetooth.*;
 import javax.crypto.*;
@@ -136,7 +140,8 @@ public class Primary {
 
     public void loadFromServer(String id, String password) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, InvalidAlgorithmParameterException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException, CertificateException {
         Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl("https://rymuff.com")
+                .baseUrl("http://rymuff.com")
+                .addConverterFactory(ScalarsConverterFactory.create())
                 .build();
         SaltService saltService = retrofit.create(SaltService.class);
         String encodedSalt = saltService.readSalt(id, password).execute().body();
@@ -145,7 +150,7 @@ public class Primary {
             throw new NullPointerException();
         }
 
-        byte[] salt = Base64.getDecoder().decode(encodedSalt);
+        byte[] salt = Base64.getUrlDecoder().decode(encodedSalt);
         byte[] nonce = readBytesFromFile(new File("server.nonce"));
         byte[] encrypted = readBytesFromFile(new File("server.key"));
 
