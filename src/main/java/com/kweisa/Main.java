@@ -26,8 +26,6 @@ public class Main {
 
         String serverUrl = null; //"btspp://ACED5CBCD4B3:3;authenticate=false;encrypt=false;master=false";
 
-        System.out.println(LocalDevice.getLocalDevice().getBluetoothAddress());
-
         if (serverUrl == null) {
             // Find Server
             ArrayList<RemoteDevice> remoteDevices = Primary.discoverRemoteDevice();
@@ -59,14 +57,14 @@ public class Main {
 
         // Connect Server
         ArrayList<Long> test = new ArrayList<>();
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 1; i++) {
             long startTime = System.currentTimeMillis();
             Primary primary = new Primary();
             // primary.loadFromLocal(password);
             // primary.loadFromServer(id, password);
             primary.loadFromSecondary(password);
-            primary.connect(serverUrl);
-            primary.authenticate();
+//            primary.connect(serverUrl);
+//            primary.authenticate();
             primary.close();
             test.add(System.currentTimeMillis() - startTime);
         }

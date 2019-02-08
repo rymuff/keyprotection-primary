@@ -155,11 +155,21 @@ public class Primary {
     }
 
     public void loadFromSecondary(String password) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, InvalidAlgorithmParameterException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException, CertificateException {
-        byte[] salt = readBytesFromFile(new File("secondary.salt"));
-        byte[] nonce = readBytesFromFile(new File("secondary.nonce"));
-        byte[] encrypted = readBytesFromFile(new File("secondary.key"));
+        String url = "btspp://404E36AB4606:1";
 
-        load(password, salt, nonce, encrypted);
+        streamConnection = (StreamConnection) Connector.open(url);
+        bufferedReader = new BufferedReader(new InputStreamReader(streamConnection.openInputStream()));
+        bufferedWriter = new BufferedWriter(new OutputStreamWriter(streamConnection.openOutputStream()));
+
+        bufferedWriter.write("Hello, World!\n");
+        bufferedWriter.flush();
+
+        System.out.println(bufferedReader.readLine());
+//        byte[] salt = readBytesFromFile(new File("secondary.salt"));
+//        byte[] nonce = readBytesFromFile(new File("secondary.nonce"));
+//        byte[] encrypted = readBytesFromFile(new File("secondary.key"));
+//
+//        load(password, salt, nonce, encrypted);
     }
 
     public void connect(String serverUrl) throws IOException {
