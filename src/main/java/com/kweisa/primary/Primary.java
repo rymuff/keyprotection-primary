@@ -12,6 +12,7 @@ import retrofit2.converter.scalars.ScalarsConverterFactory;
 
 import javax.bluetooth.DiscoveryAgent;
 import javax.bluetooth.LocalDevice;
+import javax.bluetooth.RemoteDevice;
 import javax.bluetooth.UUID;
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
@@ -172,13 +173,11 @@ public class Primary {
 
 
     public static void main(String[] args) throws Exception {
-        LocalDevice.getLocalDevice().setDiscoverable(DiscoveryAgent.GIAC);
 //        RemoteDevice remoteDevice = DiscoverAgent.selectRemoteDevice();
 //        String connectionUrl = DiscoverAgent.selectConnectionUrl(remoteDevice, UUID);
 //
 //        System.out.println("\nConnecting to " + connectionUrl);
 
-        System.out.println("Hi");
         String id = "primary-device"; // = scanner.nextLine();
         String password = "password"; // = scanner.nextLine();
 
