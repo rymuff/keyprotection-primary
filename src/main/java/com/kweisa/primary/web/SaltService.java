@@ -1,4 +1,4 @@
-package com.kweisa.primary;
+package com.kweisa.primary.web;
 
 import retrofit2.Call;
 import retrofit2.http.GET;

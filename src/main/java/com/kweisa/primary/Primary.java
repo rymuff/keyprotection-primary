@@ -1,124 +1,50 @@
 package com.kweisa.primary;
 
 
+import com.kweisa.primary.bluetooth.Connection;
+import com.kweisa.primary.bluetooth.ServerConnection;
+import com.kweisa.primary.crypto.Crypto;
+import com.kweisa.primary.util.Util;
+import com.kweisa.primary.web.SaltService;
 import retrofit2.Retrofit;
 import retrofit2.converter.scalars.ScalarsConverterFactory;
 
-import javax.bluetooth.*;
-import javax.crypto.*;
-import javax.crypto.spec.GCMParameterSpec;
-import javax.crypto.spec.PBEKeySpec;
-import javax.crypto.spec.SecretKeySpec;
-import javax.microedition.io.Connector;
-import javax.microedition.io.StreamConnection;
-import javax.microedition.io.StreamConnectionNotifier;
-import java.io.*;
+import javax.bluetooth.UUID;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SecretKey;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.spec.InvalidKeySpecException;
-import java.security.spec.KeySpec;
 import java.security.spec.PKCS8EncodedKeySpec;
-import java.util.ArrayList;
 import java.util.Base64;
 
 public class Primary {
+    private static final UUID UUID = new UUID("0000110100001000800000805F9B34FB", false);
+
     private Certificate certificate;
     private PrivateKey privateKey;
+    private Connection connection;
 
-    private StreamConnection streamConnection;
-    private BufferedReader bufferedReader;
-    private BufferedWriter bufferedWriter;
-
-    public static ArrayList<RemoteDevice> discoverRemoteDevice() throws BluetoothStateException, InterruptedException {
-        Object inquiryCompletedEvent = new Object();
-        ArrayList<RemoteDevice> remoteDevices = new ArrayList<>();
-
-        synchronized (inquiryCompletedEvent) {
-            LocalDevice.getLocalDevice().getDiscoveryAgent().startInquiry(DiscoveryAgent.GIAC, new DiscoveryListener() {
-                @Override
-                public void deviceDiscovered(RemoteDevice btDevice, DeviceClass cod) {
-                    remoteDevices.add(btDevice);
-                }
-
-                @Override
-                public void servicesDiscovered(int transID, ServiceRecord[] serviceRecords) {
-                }
-
-                @Override
-                public void serviceSearchCompleted(int transID, int respCode) {
-
-                }
-
-                @Override
-                public void inquiryCompleted(int discType) {
-                    synchronized (inquiryCompletedEvent) {
-                        System.out.println("[inquiry completed]");
-                        inquiryCompletedEvent.notifyAll();
-                    }
-                }
-            });
-            System.out.print("\nStart inquiry remote devices... ");
-            inquiryCompletedEvent.wait();
-        }
-        return remoteDevices;
+    public void connect(String connectionUrl) throws IOException {
+        connection = new Connection(connectionUrl);
+        connection.open();
     }
 
-    public static ArrayList<String> searchService(RemoteDevice remoteDevice, UUID serviceUUID) throws InterruptedException, BluetoothStateException {
-        Object serviceSearchCompletedEvent = new Object();
-        ArrayList<String> connectionUrls = new ArrayList<>();
-
-        synchronized (serviceSearchCompletedEvent) {
-            LocalDevice.getLocalDevice().getDiscoveryAgent().searchServices(new int[]{0x0100}, new UUID[]{serviceUUID}, remoteDevice, new DiscoveryListener() {
-                @Override
-                public void deviceDiscovered(RemoteDevice btDevice, DeviceClass cod) {
-
-                }
-
-                @Override
-                public void servicesDiscovered(int transID, ServiceRecord[] serviceRecords) {
-                    for (ServiceRecord serviceRecord : serviceRecords) {
-                        connectionUrls.add(serviceRecord.getConnectionURL(ServiceRecord.NOAUTHENTICATE_NOENCRYPT, false));
-                    }
-                }
-
-                @Override
-                public void serviceSearchCompleted(int transID, int respCode) {
-                    synchronized (serviceSearchCompletedEvent) {
-                        System.out.println("[service search completed]");
-                        serviceSearchCompletedEvent.notifyAll();
-                    }
-                }
-
-                @Override
-                public void inquiryCompleted(int discType) {
-
-                }
-            });
-            System.out.print("\nSearch services... ");
-            serviceSearchCompletedEvent.wait();
-        }
-        return connectionUrls;
-    }
-
-    private SecretKey deriveKey(String password, byte[] salt) throws NoSuchAlgorithmException, InvalidKeySpecException {
-        SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
-        KeySpec keySpec = new PBEKeySpec(password.toCharArray(), salt, 10000, 256);
-        return new SecretKeySpec(secretKeyFactory.generateSecret(keySpec).getEncoded(), "AES");
-    }
-
-    private byte[] decrypt(SecretKey secretKey, byte[] nonce, byte[] input) throws BadPaddingException, IllegalBlockSizeException, NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException {
-        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-        GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(16 * 8, nonce);
-        cipher.init(Cipher.DECRYPT_MODE, secretKey, gcmParameterSpec);
-        return cipher.doFinal(input);
+    public void close() throws IOException {
+        connection.close();
     }
 
     private void load(String password, byte[] salt, byte[] nonce, byte[] encrypted) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, InvalidAlgorithmParameterException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException, CertificateException {
-        SecretKey secretKey = deriveKey(password, salt);
-        byte[] decrypted = decrypt(secretKey, nonce, encrypted);
+        SecretKey secretKey = Crypto.deriveKey(password, salt);
+        byte[] decrypted = Crypto.decrypt(secretKey, nonce, encrypted);
 
         // Convert byte to PrivateKey
         KeyFactory keyFactory = KeyFactory.getInstance("RSA");
@@ -130,9 +56,9 @@ public class Primary {
     }
 
     public void loadFromLocal(String password) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, InvalidAlgorithmParameterException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException, CertificateException {
-        byte[] salt = readBytesFromFile(new File("local.salt"));
-        byte[] nonce = readBytesFromFile(new File("local.nonce"));
-        byte[] encrypted = readBytesFromFile(new File("local.key"));
+        byte[] salt = Util.readBytesFromFile(new File("local.salt"));
+        byte[] nonce = Util.readBytesFromFile(new File("local.nonce"));
+        byte[] encrypted = Util.readBytesFromFile(new File("local.key"));
 
         load(password, salt, nonce, encrypted);
     }
@@ -150,159 +76,126 @@ public class Primary {
         }
 
         byte[] salt = Base64.getUrlDecoder().decode(encodedSalt);
-        byte[] nonce = readBytesFromFile(new File("server.nonce"));
-        byte[] encrypted = readBytesFromFile(new File("server.key"));
+        byte[] nonce = Util.readBytesFromFile(new File("server.nonce"));
+        byte[] encrypted = Util.readBytesFromFile(new File("server.key"));
 
         load(password, salt, nonce, encrypted);
     }
 
     public long loadFromSecondary(String password) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, InvalidAlgorithmParameterException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException, CertificateException, InterruptedException {
-        final String SERVER_UUID = "0000110100001000800000805F9B34FB";
-        final String SERVER_URL = "btspp://localhost:" + SERVER_UUID + ";name=PrimaryDevice";
-
-        StreamConnectionNotifier streamConnectionNotifier = (StreamConnectionNotifier) Connector.open(SERVER_URL);
         System.out.println("Waiting for connection");
-        long time = System.currentTimeMillis();
-        StreamConnection streamConnection = streamConnectionNotifier.acceptAndOpen();
-        time = time - System.currentTimeMillis();
-        ServerThread serverThread = new ServerThread(streamConnection, password);
-        serverThread.start();
-        serverThread.join();
-        streamConnectionNotifier.close();
+        ServerConnection serverConnection = new ServerConnection(UUID);
 
-        byte[] salt = Base64.getDecoder().decode(serverThread.getSalt());
-        byte[] nonce = readBytesFromFile(new File("secondary.nonce"));
-        byte[] encrypted = readBytesFromFile(new File("secondary.key"));
+        long time = System.currentTimeMillis();
+
+        serverConnection.accept();
+
+        time = time - System.currentTimeMillis();
+
+        serverConnection.send(password);
+        String encodedSalt = serverConnection.receiveString();
+
+        serverConnection.close();
+
+        byte[] salt = Base64.getDecoder().decode(encodedSalt);
+        byte[] nonce = Util.readBytesFromFile(new File("secondary.nonce"));
+        byte[] encrypted = Util.readBytesFromFile(new File("secondary.key"));
 
         load(password, salt, nonce, encrypted);
 
         return time;
     }
 
-    public void connect(String serverUrl) throws IOException {
-        streamConnection = (StreamConnection) Connector.open(serverUrl);
-        bufferedReader = new BufferedReader(new InputStreamReader(streamConnection.openInputStream()));
-        bufferedWriter = new BufferedWriter(new OutputStreamWriter(streamConnection.openOutputStream()));
-    }
 
     public void authenticate() throws CertificateEncodingException, IOException, NoSuchAlgorithmException, InvalidKeyException, SignatureException {
         // Send certificate
-        send(certificate.getEncoded());
+        connection.send(certificate.getEncoded());
 
         // Receive nonce
-        byte[] nonce = receive();
+        byte[] nonce = connection.receiveEncoded();
 
         // Sign nonce, and send signature
-        byte[] signature = sign(nonce);
-        send(signature);
+        byte[] signature = Crypto.sign(nonce, privateKey);
+        connection.send(signature);
 
         // Receive result
-        if (receiveInt() == 0) {
+        if (connection.receiveInt() == 0) {
             System.out.println("[*] Verified");
         } else {
             System.out.println("[*] Verified fail");
         }
     }
 
-    private byte[] sign(byte[] message) throws InvalidKeyException, SignatureException, NoSuchAlgorithmException {
-        Signature signature = Signature.getInstance("SHA256withRSA");
-        signature.initSign(privateKey);
-        signature.update(message);
+    public void enroll(String id, String password) throws InvalidKeySpecException, NoSuchAlgorithmException, IOException, IllegalBlockSizeException, InvalidAlgorithmParameterException, NoSuchPaddingException, InvalidKeyException, BadPaddingException {
+        final byte[] salt = Util.readBytesFromFile(new File("salt"));
+        final byte[] nonce = Util.readBytesFromFile(new File("nonce"));
+        final byte[] encrypted = Util.readBytesFromFile(new File("private.key"));
 
-        return signature.sign();
+        SecretKey localKey = Crypto.deriveKey(password, salt);
+        byte[] decrypted = Crypto.decrypt(localKey, nonce, encrypted);
+        Util.writeBytesToFile(new File("private.key"), decrypted);
+
+        byte[] serverSalt = Crypto.generateRandomBytes(64);
+        byte[] serverNonce = Crypto.generateRandomBytes(32);
+
+        SecretKey serverKey = Crypto.deriveKey(password, serverSalt);
+        byte[] serverEncrypted = Crypto.encrypt(serverKey, serverNonce, decrypted);
+
+        Util.writeBytesToFile(new File("server.key"), serverEncrypted);
+        Util.writeBytesToFile(new File("server.nonce"), serverNonce);
+
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl("http://rymuff.com")
+                .addConverterFactory(ScalarsConverterFactory.create())
+                .build();
+        SaltService saltService = retrofit.create(SaltService.class);
+        saltService.createUser(id, password, Base64.getUrlEncoder().encodeToString(serverSalt)).execute();
+
+        byte[] secondarySalt = Crypto.generateRandomBytes(64);
+        byte[] secondaryNonce = Crypto.generateRandomBytes(32);
+
+        SecretKey secondaryKey = Crypto.deriveKey(password, secondarySalt);
+
+        byte[] secondaryEncrypted = Crypto.encrypt(secondaryKey, secondaryNonce, decrypted);
+        Util.writeBytesToFile(new File("secondary.key"), secondaryEncrypted);
+        Util.writeBytesToFile(new File("secondary.nonce"), secondaryNonce);
+
+        ServerConnection serverConnection = new ServerConnection(UUID);
+        serverConnection.accept();
+        serverConnection.send(password);
+        serverConnection.send(Base64.getEncoder().encodeToString(secondarySalt));
+        serverConnection.close();
     }
 
-    private void send(byte[] data) throws IOException {
-        String message = Base64.getEncoder().encodeToString(data);
 
-        bufferedWriter.write(message + "\n");
-        bufferedWriter.flush();
+    public static void main(String[] args) throws Exception {
+//        RemoteDevice remoteDevice = DiscoverAgent.selectRemoteDevice();
+//        String connectionUrl = DiscoverAgent.selectConnectionUrl(remoteDevice, UUID);
+//
+//        System.out.println("\nConnecting to " + connectionUrl);
 
-        System.out.printf("[>] %s\n", message);
-    }
+        String id = "primary-device"; // = scanner.nextLine();
+        String password = "password"; // = scanner.nextLine();
 
-    private byte[] receive() throws IOException {
-        String message = bufferedReader.readLine();
-        System.out.printf("[<] %s\n", message);
+        Primary primary = new Primary();
+        primary.enroll(id, password);
 
-        return Base64.getDecoder().decode(message);
-    }
-
-    private int receiveInt() throws IOException {
-        int data = bufferedReader.read();
-        System.out.printf("[<] INT:%d\n", data);
-
-        return data;
-    }
-
-    public void close() throws IOException {
-        bufferedReader.close();
-        bufferedWriter.close();
-        streamConnection.close();
-    }
-
-    private static byte[] readBytesFromFile(File file) throws IOException {
-        FileInputStream fileInputStream = new FileInputStream(file);
-        byte[] bytes = new byte[fileInputStream.available()];
-        if (fileInputStream.available() != fileInputStream.read(bytes)) {
-            fileInputStream.close();
-            throw new IOException();
-        }
-        fileInputStream.close();
-
-        return bytes;
-    }
-
-    static class ServerThread extends Thread {
-        StreamConnection streamConnection;
-        BufferedReader bufferedReader;
-        BufferedWriter bufferedWriter;
-        String password;
-
-        String salt;
-
-        ServerThread(StreamConnection streamConnection, String password) {
-            this.streamConnection = streamConnection;
-            this.password = password;
-        }
-
-        void send(String message) throws IOException {
-            bufferedWriter.write(message + "\n");
-            bufferedWriter.flush();
-
-            System.out.printf("[>] %s\n", message);
-        }
-
-        String receive() throws IOException {
-            String message = bufferedReader.readLine();
-            System.out.printf("[<] %s\n", message);
-
-            return message;
-        }
-
-        @Override
-        public void run() {
-            try {
-                bufferedReader = new BufferedReader(new InputStreamReader(streamConnection.openInputStream()));
-                bufferedWriter = new BufferedWriter(new OutputStreamWriter(streamConnection.openOutputStream()));
-
-                send(password);
-                salt = receive();
-
-                close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-
-        void close() throws IOException {
-            bufferedReader.close();
-            bufferedWriter.close();
-            streamConnection.close();
-        }
-
-        String getSalt() {
-            return salt;
-        }
+//        // Connect Server
+//        ArrayList<Long> test = new ArrayList<>();
+//        for (int i = 0; i < 100; i++) {
+//            long startTime = System.currentTimeMillis();
+//            Primary primary = new Primary();
+//            primary.loadFromLocal(password);
+//            // primary.loadFromServer(id, password);
+////            startTime = startTime - primary.loadFromSecondary(password);
+//            primary.connect(connectionUrl);
+//            primary.authenticate();
+//            primary.close();
+//            test.add(System.currentTimeMillis() - startTime);
+//        }
+//
+//        for (Long aLong : test) {
+//            System.out.print(aLong + " ");
+//        }
     }
 }
