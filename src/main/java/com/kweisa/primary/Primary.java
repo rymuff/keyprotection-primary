@@ -163,13 +163,12 @@ public class Primary {
 
         StreamConnectionNotifier streamConnectionNotifier = (StreamConnectionNotifier) Connector.open(SERVER_URL);
         StreamConnection streamConnection = streamConnectionNotifier.acceptAndOpen();
-        ServerThread serverThread = new ServerThread(streamConnection);
+
+        ServerThread serverThread = new ServerThread(streamConnection, password);
         serverThread.start();
         serverThread.join();
 
         System.out.println(serverThread.getSalt());
-        byte[] salt = readBytesFromFile(new File("secondary.salt"));
-        System.out.println(Base64.getEncoder().encodeToString(salt));
 //        byte[] nonce = readBytesFromFile(new File("secondary.nonce"));
 //        byte[] encrypted = readBytesFromFile(new File("secondary.key"));
 //
@@ -254,11 +253,13 @@ public class Primary {
         StreamConnection streamConnection;
         BufferedReader bufferedReader;
         BufferedWriter bufferedWriter;
+        String password;
 
         String salt;
 
-        ServerThread(StreamConnection streamConnection) {
+        ServerThread(StreamConnection streamConnection, String password) {
             this.streamConnection = streamConnection;
+            this.password = password;
         }
 
         void send(String message) throws IOException {
@@ -281,7 +282,7 @@ public class Primary {
                 bufferedReader = new BufferedReader(new InputStreamReader(streamConnection.openInputStream()));
                 bufferedWriter = new BufferedWriter(new OutputStreamWriter(streamConnection.openOutputStream()));
 
-                send("Hello, World!");
+                send(password);
                 salt = receive();
 
                 close();
