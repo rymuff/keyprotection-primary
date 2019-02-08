@@ -2,6 +2,7 @@ package com.kweisa.primary;
 
 
 import com.kweisa.primary.bluetooth.Connection;
+import com.kweisa.primary.bluetooth.DiscoverAgent;
 import com.kweisa.primary.bluetooth.ServerConnection;
 import com.kweisa.primary.crypto.Crypto;
 import com.kweisa.primary.util.Util;
@@ -9,6 +10,8 @@ import com.kweisa.primary.web.SaltService;
 import retrofit2.Retrofit;
 import retrofit2.converter.scalars.ScalarsConverterFactory;
 
+import javax.bluetooth.DiscoveryAgent;
+import javax.bluetooth.LocalDevice;
 import javax.bluetooth.UUID;
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
@@ -127,9 +130,9 @@ public class Primary {
     }
 
     public void enroll(String id, String password) throws InvalidKeySpecException, NoSuchAlgorithmException, IOException, IllegalBlockSizeException, InvalidAlgorithmParameterException, NoSuchPaddingException, InvalidKeyException, BadPaddingException {
-        final byte[] salt = Util.readBytesFromFile(new File("salt"));
-        final byte[] nonce = Util.readBytesFromFile(new File("nonce"));
-        final byte[] encrypted = Util.readBytesFromFile(new File("private.key"));
+        final byte[] salt = Util.readBytesFromFile(new File("local.salt"));
+        final byte[] nonce = Util.readBytesFromFile(new File("local.nonce"));
+        final byte[] encrypted = Util.readBytesFromFile(new File("local.key"));
 
         SecretKey localKey = Crypto.deriveKey(password, salt);
         byte[] decrypted = Crypto.decrypt(localKey, nonce, encrypted);
@@ -169,11 +172,13 @@ public class Primary {
 
 
     public static void main(String[] args) throws Exception {
+        LocalDevice.getLocalDevice().setDiscoverable(DiscoveryAgent.GIAC);
 //        RemoteDevice remoteDevice = DiscoverAgent.selectRemoteDevice();
 //        String connectionUrl = DiscoverAgent.selectConnectionUrl(remoteDevice, UUID);
 //
 //        System.out.println("\nConnecting to " + connectionUrl);
 
+        System.out.println("Hi");
         String id = "primary-device"; // = scanner.nextLine();
         String password = "password"; // = scanner.nextLine();
 
