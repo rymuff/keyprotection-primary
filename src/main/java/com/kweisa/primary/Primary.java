@@ -165,7 +165,7 @@ public class Primary {
         StreamConnection streamConnection = streamConnectionNotifier.acceptAndOpen();
         ServerThread serverThread = new ServerThread(streamConnection);
         serverThread.start();
-        serverThread.wait();
+        serverThread.join();
 
         System.out.println(serverThread.getSalt());
         byte[] salt = readBytesFromFile(new File("secondary.salt"));
