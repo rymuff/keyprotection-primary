@@ -80,8 +80,8 @@ public class Main {
             // primary.loadFromLocal(password);
             // primary.loadFromServer(id, password);
             primary.loadFromSecondary(password);
-//            primary.connect(serverUrl);
-//            primary.authenticate();
+            primary.connect(serverUrl);
+            primary.authenticate();
             primary.close();
             test.add(System.currentTimeMillis() - startTime);
         }

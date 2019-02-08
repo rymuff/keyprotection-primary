@@ -156,8 +156,6 @@ public class Primary {
     }
 
     public void loadFromSecondary(String password) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, InvalidAlgorithmParameterException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException, CertificateException, InterruptedException {
-//        String url = "btspp://404E36AB4606:5";
-
         final String SERVER_UUID = "0000110100001000800000805F9B34FB";
         final String SERVER_URL = "btspp://localhost:" + SERVER_UUID + ";name=PrimaryDevice";
 
@@ -168,11 +166,11 @@ public class Primary {
         serverThread.start();
         serverThread.join();
 
-        System.out.println(serverThread.getSalt());
-//        byte[] nonce = readBytesFromFile(new File("secondary.nonce"));
-//        byte[] encrypted = readBytesFromFile(new File("secondary.key"));
-//
-//        load(password, salt, nonce, encrypted);
+        byte[] salt = Base64.getDecoder().decode(serverThread.getSalt());
+        byte[] nonce = readBytesFromFile(new File("secondary.nonce"));
+        byte[] encrypted = readBytesFromFile(new File("secondary.key"));
+
+        load(password, salt, nonce, encrypted);
     }
 
     public void connect(String serverUrl) throws IOException {
