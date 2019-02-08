@@ -165,6 +165,7 @@ public class Primary {
         ServerThread serverThread = new ServerThread(streamConnection, password);
         serverThread.start();
         serverThread.join();
+        streamConnectionNotifier.close();
 
         byte[] salt = Base64.getDecoder().decode(serverThread.getSalt());
         byte[] nonce = readBytesFromFile(new File("secondary.nonce"));
