@@ -27,6 +27,7 @@ import java.util.Base64;
 public class Primary {
     private Certificate certificate;
     private PrivateKey privateKey;
+
     private StreamConnection streamConnection;
     private BufferedReader bufferedReader;
     private BufferedWriter bufferedWriter;
