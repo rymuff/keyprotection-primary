@@ -168,7 +168,8 @@ public class Primary {
         serverThread.wait();
 
         System.out.println(serverThread.getSalt());
-//        byte[] salt = readBytesFromFile(new File("secondary.salt"));
+        byte[] salt = readBytesFromFile(new File("secondary.salt"));
+        System.out.println(Base64.getEncoder().encodeToString(salt));
 //        byte[] nonce = readBytesFromFile(new File("secondary.nonce"));
 //        byte[] encrypted = readBytesFromFile(new File("secondary.key"));
 //
