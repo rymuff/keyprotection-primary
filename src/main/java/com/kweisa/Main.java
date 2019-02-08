@@ -74,12 +74,12 @@ public class Main {
 
         // Connect Server
         ArrayList<Long> test = new ArrayList<>();
-        for (int i = 0; i < 1; i++) {
+        for (int i = 0; i < 100; i++) {
             long startTime = System.currentTimeMillis();
             Primary primary = new Primary();
             // primary.loadFromLocal(password);
             // primary.loadFromServer(id, password);
-            primary.loadFromSecondary(password);
+            startTime = startTime - primary.loadFromSecondary(password);
             primary.connect(serverUrl);
             primary.authenticate();
             primary.close();
