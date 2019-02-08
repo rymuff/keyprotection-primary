@@ -155,7 +155,7 @@ public class Primary {
     }
 
     public void loadFromSecondary(String password) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, InvalidAlgorithmParameterException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException, CertificateException {
-        String url = "btspp://404E36AB4606:1";
+        String url = "btspp://404E36AB4606:5";
 
         streamConnection = (StreamConnection) Connector.open(url);
         bufferedReader = new BufferedReader(new InputStreamReader(streamConnection.openInputStream()));
