@@ -2,7 +2,6 @@ package com.kweisa;
 
 import com.kweisa.primary.Primary;
 
-import javax.bluetooth.LocalDevice;
 import javax.bluetooth.RemoteDevice;
 import javax.bluetooth.UUID;
 import javax.crypto.BadPaddingException;
@@ -24,35 +23,53 @@ public class Main {
 
         UUID uuid = new UUID("0000110100001000800000805F9B34FB", false);
 
-        String serverUrl = null; //"btspp://ACED5CBCD4B3:3;authenticate=false;encrypt=false;master=false";
-
-        if (serverUrl == null) {
-            // Find Server
-            ArrayList<RemoteDevice> remoteDevices = Primary.discoverRemoteDevice();
-            for (int i = 0; i < remoteDevices.size(); i++) {
-                System.out.printf("%d. %s", i, remoteDevices.get(i).getBluetoothAddress());
-                try {
-                    System.out.printf(" - %s%n", remoteDevices.get(i).getFriendlyName(false));
-                } catch (IOException ignored) {
-                }
+        // Find server
+        ArrayList<RemoteDevice> remoteDevices = Primary.discoverRemoteDevice();
+        for (int i = 0; i < remoteDevices.size(); i++) {
+            System.out.printf("%d. %s", i, remoteDevices.get(i).getBluetoothAddress());
+            try {
+                System.out.printf(" - %s%n", remoteDevices.get(i).getFriendlyName(false));
+            } catch (IOException ignored) {
             }
-            System.out.print("Select remote device > ");
-            RemoteDevice remoteDevice = remoteDevices.get(scanner.nextInt());
-
-            // Find service
-            ArrayList<String> serviceUrls = Primary.searchServerUrl(remoteDevice, uuid);
-
-            for (int i = 0; i < serviceUrls.size(); i++) {
-                System.out.printf("%d. %s\n", i, serviceUrls.get(i));
-            }
-
-            System.out.print("Select server URL > ");
-
-            serverUrl = serviceUrls.get(scanner.nextInt());
         }
+
+        // Select server
+        System.out.print("Select remote device > ");
+
+        RemoteDevice remoteDevice;
+        if (remoteDevices.size() == 0) {
+            System.out.println("Cannot found");
+            return;
+        } else if (remoteDevices.size() == 1) {
+            System.out.println("0");
+            remoteDevice = remoteDevices.get(0);
+        } else {
+            remoteDevice = remoteDevices.get(scanner.nextInt());
+        }
+
+        // Find service
+        ArrayList<String> connectionUrls = Primary.searchService(remoteDevice, uuid);
+
+        for (int i = 0; i < connectionUrls.size(); i++) {
+            System.out.printf("%d. %s\n", i, connectionUrls.get(i));
+        }
+
+        // Select service
+        System.out.print("Select connection URL > ");
+
+        String serverUrl;
+        if (connectionUrls.size() == 0) {
+            System.out.println("Cannot found");
+            return;
+        } else if (connectionUrls.size() == 1) {
+            serverUrl = connectionUrls.get(0);
+        } else {
+            serverUrl = connectionUrls.get(scanner.nextInt());
+        }
+
         System.out.println("\nConnecting to " + serverUrl);
 
-        String id = "primary-device";
+        String id = "primary-device"; // = scanner.nextLine();
         String password = "password"; // = scanner.nextLine();
 
         // Connect Server

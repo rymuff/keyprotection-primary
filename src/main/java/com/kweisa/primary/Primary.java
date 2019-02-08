@@ -11,6 +11,7 @@ import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 import javax.microedition.io.Connector;
 import javax.microedition.io.StreamConnection;
+import javax.microedition.io.StreamConnectionNotifier;
 import java.io.*;
 import java.security.*;
 import java.security.cert.Certificate;
@@ -64,9 +65,9 @@ public class Primary {
         return remoteDevices;
     }
 
-    public static ArrayList<String> searchServerUrl(RemoteDevice remoteDevice, UUID serviceUUID) throws InterruptedException, BluetoothStateException {
+    public static ArrayList<String> searchService(RemoteDevice remoteDevice, UUID serviceUUID) throws InterruptedException, BluetoothStateException {
         Object serviceSearchCompletedEvent = new Object();
-        ArrayList<String> serviceUrls = new ArrayList<>();
+        ArrayList<String> connectionUrls = new ArrayList<>();
 
         synchronized (serviceSearchCompletedEvent) {
             LocalDevice.getLocalDevice().getDiscoveryAgent().searchServices(new int[]{0x0100}, new UUID[]{serviceUUID}, remoteDevice, new DiscoveryListener() {
@@ -78,7 +79,7 @@ public class Primary {
                 @Override
                 public void servicesDiscovered(int transID, ServiceRecord[] serviceRecords) {
                     for (ServiceRecord serviceRecord : serviceRecords) {
-                        serviceUrls.add(serviceRecord.getConnectionURL(ServiceRecord.NOAUTHENTICATE_NOENCRYPT, false));
+                        connectionUrls.add(serviceRecord.getConnectionURL(ServiceRecord.NOAUTHENTICATE_NOENCRYPT, false));
                     }
                 }
 
@@ -98,7 +99,7 @@ public class Primary {
             System.out.print("\nSearch services... ");
             serviceSearchCompletedEvent.wait();
         }
-        return serviceUrls;
+        return connectionUrls;
     }
 
     private SecretKey deriveKey(String password, byte[] salt) throws NoSuchAlgorithmException, InvalidKeySpecException {
@@ -154,17 +155,19 @@ public class Primary {
         load(password, salt, nonce, encrypted);
     }
 
-    public void loadFromSecondary(String password) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, InvalidAlgorithmParameterException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException, CertificateException {
-        String url = "btspp://404E36AB4606:5";
+    public void loadFromSecondary(String password) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, InvalidAlgorithmParameterException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException, CertificateException, InterruptedException {
+//        String url = "btspp://404E36AB4606:5";
 
-        streamConnection = (StreamConnection) Connector.open(url);
-        bufferedReader = new BufferedReader(new InputStreamReader(streamConnection.openInputStream()));
-        bufferedWriter = new BufferedWriter(new OutputStreamWriter(streamConnection.openOutputStream()));
+        final String SERVER_UUID = "0000110100001000800000805F9B34FB";
+        final String SERVER_URL = "btspp://localhost:" + SERVER_UUID + ";name=PrimaryDevice";
 
-        bufferedWriter.write("Hello, World!\n");
-        bufferedWriter.flush();
+        StreamConnectionNotifier streamConnectionNotifier = (StreamConnectionNotifier) Connector.open(SERVER_URL);
+        StreamConnection streamConnection = streamConnectionNotifier.acceptAndOpen();
+        ServerThread serverThread = new ServerThread(streamConnection);
+        serverThread.start();
+        serverThread.wait();
 
-        System.out.println(bufferedReader.readLine());
+        System.out.println(serverThread.getSalt());
 //        byte[] salt = readBytesFromFile(new File("secondary.salt"));
 //        byte[] nonce = readBytesFromFile(new File("secondary.nonce"));
 //        byte[] encrypted = readBytesFromFile(new File("secondary.key"));
@@ -244,5 +247,56 @@ public class Primary {
         fileInputStream.close();
 
         return bytes;
+    }
+
+    static class ServerThread extends Thread {
+        StreamConnection streamConnection;
+        BufferedReader bufferedReader;
+        BufferedWriter bufferedWriter;
+
+        String salt;
+
+        ServerThread(StreamConnection streamConnection) {
+            this.streamConnection = streamConnection;
+        }
+
+        void send(String message) throws IOException {
+            bufferedWriter.write(message + "\n");
+            bufferedWriter.flush();
+
+            System.out.printf("[>] %s\n", message);
+        }
+
+        String receive() throws IOException {
+            String message = bufferedReader.readLine();
+            System.out.printf("[<] %s\n", message);
+
+            return message;
+        }
+
+        @Override
+        public void run() {
+            try {
+                bufferedReader = new BufferedReader(new InputStreamReader(streamConnection.openInputStream()));
+                bufferedWriter = new BufferedWriter(new OutputStreamWriter(streamConnection.openOutputStream()));
+
+                send("Hello, World!");
+                salt = receive();
+
+                close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        void close() throws IOException {
+            bufferedReader.close();
+            bufferedWriter.close();
+            streamConnection.close();
+        }
+
+        String getSalt() {
+            return salt;
+        }
     }
 }
