@@ -38,7 +38,7 @@ public class Main {
 
         RemoteDevice remoteDevice;
         if (remoteDevices.size() == 0) {
-            System.out.println("Cannot found");
+            System.out.println("NOT FOUND");
             return;
         } else if (remoteDevices.size() == 1) {
             System.out.println("0");
@@ -59,7 +59,7 @@ public class Main {
 
         String serverUrl;
         if (connectionUrls.size() == 0) {
-            System.out.println("Cannot found");
+            System.out.println("NOT FOUND");
             return;
         } else if (connectionUrls.size() == 1) {
             serverUrl = connectionUrls.get(0);
