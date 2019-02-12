@@ -36,7 +36,7 @@ public class Main {
             // Connect Server
             try {
                 primary.load(Primary.Type.SERVER, username, password);
-            } catch (Exception e) { // If fail
+            } catch (Exception e) { // If SERVER fail
                 primary.load(Primary.Type.SECONDARY, username, password);
             }
             primary.connect(connectionUrl);
