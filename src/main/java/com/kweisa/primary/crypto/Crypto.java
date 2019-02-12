@@ -15,7 +15,7 @@ public class Crypto {
         return new SecretKeySpec(secretKeyFactory.generateSecret(keySpec).getEncoded(), "AES");
     }
 
-    public static byte[] encrypt(SecretKey secretKey, byte[] nonce, byte[] input) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
+    static byte[] encrypt(SecretKey secretKey, byte[] nonce, byte[] input) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
         Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
         GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(16 * 8, nonce);
         cipher.init(Cipher.ENCRYPT_MODE, secretKey, gcmParameterSpec);
@@ -37,7 +37,7 @@ public class Crypto {
         return signature.sign();
     }
 
-    public static byte[] generateRandomBytes(int size) throws NoSuchAlgorithmException {
+    static byte[] generateRandomBytes(int size) throws NoSuchAlgorithmException {
         byte[] bytes = new byte[size];
         SecureRandom.getInstanceStrong().nextBytes(bytes);
         return bytes;
