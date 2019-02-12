@@ -7,11 +7,11 @@ import retrofit2.http.Query;
 
 public interface SaltService {
     @POST("/salt")
-    Call<Void> createUser(@Query("id") String id,
+    Call<Void> createUser(@Query("username") String username,
                     @Query("password") String password,
                     @Query("salt") String salt);
 
     @GET("/salt")
-    Call<String> readSalt(@Query("id") String id,
+    Call<String> readSalt(@Query("username") String username,
                           @Query("password") String password);
 }
