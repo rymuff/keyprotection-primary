@@ -35,20 +35,21 @@ public class Main {
             String connectionUrl = DiscoverAgent.selectConnectionUrl(remoteDevice, UUID);
             for (int i = 0; i < 100; i++) {
 //                Thread.sleep(500);
-                long time = System.currentTimeMillis();
+                primary.time = System.currentTimeMillis();
                 System.out.println("\nConnecting to " + connectionUrl);
-                primary.load(Primary.Type.SECONDARY, username, password);
+
                 // Connect Server
-                try {
-//                    primary.load(Primary.Type.SERVER, username, password);
-//                    primary.load(Primary.Type.LOCAL, username, password);
-                } catch (Exception e) { // If SERVER fail
-//                    primary.load(Primary.Type.SECONDARY, username, password);
-                }
+                primary.load(Primary.Type.SECONDARY, username, password);
+//                try {
+////                    primary.load(Primary.Type.SERVER, username, password);
+////                    primary.load(Primary.Type.LOCAL, username, password);
+//                } catch (Exception e) { // If SERVER fail
+////                    primary.load(Primary.Type.SECONDARY, username, password);
+//                }
                 primary.connect(connectionUrl);
                 primary.authenticate();
                 primary.close();
-                System.out.printf("Time: " + (System.currentTimeMillis() - time));
+                System.out.printf("Time: " + (System.currentTimeMillis() - primary.time - primary.time2));
             }
         }
     }

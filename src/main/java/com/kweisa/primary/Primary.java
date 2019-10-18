@@ -32,6 +32,9 @@ public class Primary {
     private Certificate certificate;
     private PrivateKey privateKey;
     private Connection connection;
+    public long time;
+    public long time2 = 0;
+
     public Primary(javax.bluetooth.UUID UUID) {
         this.UUID = UUID;
     }
@@ -103,7 +106,9 @@ public class Primary {
         System.out.println("Waiting for connection");
         ServerConnection serverConnection = new ServerConnection(UUID);
 
+        time2 = System.currentTimeMillis();
         serverConnection.accept();
+        time2 = System.currentTimeMillis() - time2;
         serverConnection.send(password);
         String encodedSalt = serverConnection.receiveString();
 
@@ -137,7 +142,7 @@ public class Primary {
 
     public void enroll(String username, String password) throws InvalidKeySpecException, NoSuchAlgorithmException, IOException, IllegalBlockSizeException, InvalidAlgorithmParameterException, NoSuchPaddingException, InvalidKeyException, BadPaddingException {
         // Get private key
-        long timer = System.currentTimeMillis();
+        time = System.currentTimeMillis();
         final byte[] salt = Util.readBytesFromFile(new File("local.salt"));
         final byte[] nonce = Util.readBytesFromFile(new File("local.nonce"));
         final byte[] encrypted = Util.readBytesFromFile(new File("local.key"));
@@ -166,13 +171,13 @@ public class Primary {
 
         System.out.println("Waiting for connection");
         ServerConnection serverConnection = new ServerConnection(UUID);
-        long timer2 = System.currentTimeMillis();
+        time2 = System.currentTimeMillis();
         serverConnection.accept();
-        timer2 = System.currentTimeMillis() - timer2;
+        time2 = System.currentTimeMillis() - time2;
         serverConnection.send(password);
         serverConnection.send(Base64.getEncoder().encodeToString(secondaryKeyParameterSpec.getSalt()));
         serverConnection.close();
-        System.out.println("time: " + (System.currentTimeMillis() - timer - timer2));
+        System.out.println("time: " + (System.currentTimeMillis() - time - time2));
     }
 
     public enum Type {LOCAL, SERVER, SECONDARY}
