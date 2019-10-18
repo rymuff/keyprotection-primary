@@ -86,7 +86,7 @@ public class Primary {
 
     private void loadFromServer(String username, String password) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, InvalidAlgorithmParameterException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException, CertificateException {
         Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl("http://rymuff.com")
+                .baseUrl("http://rymuff.com:8080")
                 .addConverterFactory(ScalarsConverterFactory.create())
                 .build();
         SaltService saltService = retrofit.create(SaltService.class);
@@ -156,7 +156,7 @@ public class Primary {
         Util.writeBytesToFile(new File("server.nonce"), serverKeyParameterSpec.getNonce());
 
         Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl("http://rymuff.com")
+                .baseUrl("http://rymuff.com:8080")
                 .addConverterFactory(ScalarsConverterFactory.create())
                 .build();
         SaltService saltService = retrofit.create(SaltService.class);
