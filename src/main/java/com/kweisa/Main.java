@@ -18,10 +18,13 @@ public class Main {
         System.out.print("> ");
         int choice = scanner.nextInt();
 
-        System.out.print("Username> ");
-        String username = scanner.nextLine(); // primary-device
-        System.out.print("Password> ");
-        String password = scanner.nextLine(); // password
+        System.out.print("Username> primary-device\n");
+        // String username = scanner.nextLine();
+        String username = "primary-device";
+
+        System.out.print("Password> password\n");
+        // String password = scanner.nextLine();
+        String password = "password";
 
         Primary primary = new Primary(UUID);
 
