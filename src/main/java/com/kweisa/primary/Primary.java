@@ -165,14 +165,14 @@ public class Primary {
         Util.writeBytesToFile(new File("secondary.nonce"), secondaryKeyParameterSpec.getNonce());
 
         System.out.println("Waiting for connection");
-        System.out.println(timer - System.currentTimeMillis());
         ServerConnection serverConnection = new ServerConnection(UUID);
-        System.out.println(timer - System.currentTimeMillis());
+        long timer2 = System.currentTimeMillis();
         serverConnection.accept();
+        timer2 = System.currentTimeMillis() - timer2;
         serverConnection.send(password);
         serverConnection.send(Base64.getEncoder().encodeToString(secondaryKeyParameterSpec.getSalt()));
         serverConnection.close();
-        System.out.println(timer - System.currentTimeMillis());
+        System.out.println("time: " + (System.currentTimeMillis() - timer - timer2));
     }
 
     public enum Type {LOCAL, SERVER, SECONDARY}

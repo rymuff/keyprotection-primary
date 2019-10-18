@@ -30,23 +30,26 @@ public class Main {
 
         if (choice == 1) {
             primary.enroll(username, password);
-        } else if (choice == 2){
+        } else if (choice == 2) {
             RemoteDevice remoteDevice = DiscoverAgent.selectRemoteDevice();
             String connectionUrl = DiscoverAgent.selectConnectionUrl(remoteDevice, UUID);
-
-            System.out.println("\nConnecting to " + connectionUrl);
-
-            // Connect Server
-            try {
-                primary.load(Primary.Type.SERVER, username, password);
-            } catch (Exception e) { // If SERVER fail
+            for (int i = 0; i < 100; i++) {
+//                Thread.sleep(500);
+                long time = System.currentTimeMillis();
+                System.out.println("\nConnecting to " + connectionUrl);
                 primary.load(Primary.Type.SECONDARY, username, password);
+                // Connect Server
+                try {
+//                    primary.load(Primary.Type.SERVER, username, password);
+//                    primary.load(Primary.Type.LOCAL, username, password);
+                } catch (Exception e) { // If SERVER fail
+//                    primary.load(Primary.Type.SECONDARY, username, password);
+                }
+                primary.connect(connectionUrl);
+                primary.authenticate();
+                primary.close();
+                System.out.printf("Time: " + (System.currentTimeMillis() - time));
             }
-            primary.connect(connectionUrl);
-            primary.authenticate();
-            primary.close();
-        } else if (choice == 3) {
-
         }
     }
 }
