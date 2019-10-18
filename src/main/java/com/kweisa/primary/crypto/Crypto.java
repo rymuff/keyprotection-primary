@@ -30,7 +30,8 @@ public class Crypto {
     }
 
     public static byte[] sign(byte[] message, PrivateKey privateKey) throws InvalidKeyException, SignatureException, NoSuchAlgorithmException {
-        Signature signature = Signature.getInstance("SHA256withRSA");
+//        Signature signature = Signature.getInstance("SHA256withRSA");
+        Signature signature = Signature.getInstance("SHA256withECDSA");
         signature.initSign(privateKey);
         signature.update(message);
 

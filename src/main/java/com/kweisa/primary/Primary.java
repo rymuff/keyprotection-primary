@@ -67,7 +67,8 @@ public class Primary {
         byte[] decrypted = Crypto.decrypt(secretKey, nonce, encrypted);
 
         // Convert byte to PrivateKey
-        KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+//        KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+        KeyFactory keyFactory = KeyFactory.getInstance("EC");
         privateKey = keyFactory.generatePrivate(new PKCS8EncodedKeySpec(decrypted));
 
         // Load Certificate
