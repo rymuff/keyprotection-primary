@@ -30,7 +30,7 @@ public class Main {
 
         if (choice == 1) {
             primary.enroll(username, password);
-        } else {
+        } else if (choice == 2){
             RemoteDevice remoteDevice = DiscoverAgent.selectRemoteDevice();
             String connectionUrl = DiscoverAgent.selectConnectionUrl(remoteDevice, UUID);
 
@@ -45,6 +45,8 @@ public class Main {
             primary.connect(connectionUrl);
             primary.authenticate();
             primary.close();
+        } else if (choice == 3) {
+
         }
     }
 }

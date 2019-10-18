@@ -29,13 +29,9 @@ import java.util.Base64;
 
 public class Primary {
     private final UUID UUID;
-
-    public enum Type {LOCAL, SERVER, SECONDARY}
-
     private Certificate certificate;
     private PrivateKey privateKey;
     private Connection connection;
-
     public Primary(javax.bluetooth.UUID UUID) {
         this.UUID = UUID;
     }
@@ -120,7 +116,6 @@ public class Primary {
         load(password, salt, nonce, encrypted);
     }
 
-
     public void authenticate() throws CertificateEncodingException, IOException, NoSuchAlgorithmException, InvalidKeyException, SignatureException {
         // Send certificate
         connection.send(certificate.getEncoded());
@@ -142,6 +137,7 @@ public class Primary {
 
     public void enroll(String username, String password) throws InvalidKeySpecException, NoSuchAlgorithmException, IOException, IllegalBlockSizeException, InvalidAlgorithmParameterException, NoSuchPaddingException, InvalidKeyException, BadPaddingException {
         // Get private key
+        long timer = System.currentTimeMillis();
         final byte[] salt = Util.readBytesFromFile(new File("local.salt"));
         final byte[] nonce = Util.readBytesFromFile(new File("local.nonce"));
         final byte[] encrypted = Util.readBytesFromFile(new File("local.key"));
@@ -169,10 +165,15 @@ public class Primary {
         Util.writeBytesToFile(new File("secondary.nonce"), secondaryKeyParameterSpec.getNonce());
 
         System.out.println("Waiting for connection");
+        System.out.println(timer - System.currentTimeMillis());
         ServerConnection serverConnection = new ServerConnection(UUID);
+        System.out.println(timer - System.currentTimeMillis());
         serverConnection.accept();
         serverConnection.send(password);
         serverConnection.send(Base64.getEncoder().encodeToString(secondaryKeyParameterSpec.getSalt()));
         serverConnection.close();
+        System.out.println(timer - System.currentTimeMillis());
     }
+
+    public enum Type {LOCAL, SERVER, SECONDARY}
 }
